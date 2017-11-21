@@ -2,7 +2,6 @@ from pykeyboard import PyKeyboard
 import pyautogui as PyMouse
 import time as Clock
 
-import Output as NodLog
 
 
 """
@@ -39,7 +38,7 @@ def doKeyPress(aChar):
 """	
 def doLeftClick(aX, aY):
 	PyMouse.click(aX, aY, button='left')
-	NodLog.logDebug("Mouse Click: (%d, %d)" %(aX, aY))
+	# NodLog.logDebug("Mouse Click: (%d, %d)" %(aX, aY))
 
 """
 "

@@ -1,12 +1,9 @@
-import Combat as CMB
-import Nodcv as NodCV
+from Combat import Combat
+from Nodcv import NodiatisCV
 import time as Clock
 import random, gc
-import Output as NodLog
 
 from PyQt5.QtCore import pyqtSignal, QThread
-
-from guppy import hpy
 
 
 #
@@ -24,111 +21,109 @@ CURRENT_KILLS = 0
 """
 "
 "
-"
+" Parent: None
 """
 class Game (QThread):
-    
-    GUI_KillCount = pyqtSignal(int)
-    GUI_ShowMessage = pyqtSignal(str)
-
+        
     """
+    " This function initializes the Game class
     "
-    "
-    " Parent: Game Class
+    " Parent: Game 
     """
-    def __init__(self):
+    def __init__(self, logger):
         super(Game, self).__init__()
-        self.hp = hpy()
-        self.hp.setrelheap()
+        self.CMB = Combat(logger)
+        self.nod_cv = NodiatisCV(logger)
+        self.nod_log = logger
 
 
 
     """
     " This function automates nodiatis combat
     " 
-    " Parent: Game Class
+    " Parent: Game 
     """
-    def GameLoop(self):    
-        #Kill Counter
-        global TOTAL_KILLS
-        global CURRENT_KILLS
-        
+    def GameLoop(self):
         self.startCountDown()
         
         while 1:
-            # Test - Remove / fix later
-            # self.GUI_KillCount.emit(1)
-            # self.GUI_ShowMessage.emit("This is a test")
-
-            while not GAME_PAUSE:
-                self.GUI_KillCount.emit(1)
-
+            while not GAME_PAUSE:                
                 try:
-                    if NodCV.doScreenMatch(NodCV.SSQueries.get("ooc")) is not None: 
-                        CMB.start()
+                    if self.nod_cv.doScreenMatch(self.nod_cv.SSQueries.get("ooc")) is not None: 
+                        self.CMB.start()
+                        self.nod_log.logNewKill() # Log new kill in start of combat because we 
+                                                  # sometimes fail to exit on first attempt
 
-                    elif NodCV.doScreenMatch(NodCV.SSQueries.get("exit")) is not None:
-                        CMB.end()
+                    elif self.nod_cv.doScreenMatch(self.nod_cv.SSQueries.get("exit")) is not None:
+                        self.randomBreak()
+                        self.CMB.end()
                         CURRENT_KILLS += 1
                     else:
-                        CMB.inProcess()
-
-                    #Random Break / Pause.. maybe
-                    rand_kills = random.randint(15, 40)
-                    rand_sleep = random.randint(10, 25)
-
-                    if CURRENT_KILLS > rand_kills:
-                        NodLog.logOutput("Taking break for %ds" %rand_sleep)
-                        Clock.sleep(rand_sleep)
-                        TOTAL_KILLS += CURRENT_KILLS
-                        CURRENT_KILLS = 0;
+                        self.CMB.inProcess()
 
                 except Exception as e:
-                    NodLog.logDebug("Exception occurred: ")
-                    NodLog.logDebug(e)
+                    self.nod_log.logDebug("Exception occurred: ")
+                    self.nod_log.logDebug(e)
                     # print e
 
                 gc.collect() # initiate garbage collector > prevents fragmentation
 
-            h = self.hp.heap()
-            print h
             Clock.sleep(2) # wait for game to resume
 
+    """
+    " This function takes a random length break after a random number of kills
+    "
+    " Parent: Game 
+    """
+    def randomBreak(self):
+        global TOTAL_KILLS
+        global CURRENT_KILLS
+
+        #Random Break / Pause.. maybe
+        rand_kills = random.randint(15, 40)
+        rand_sleep = random.randint(10, 25)
+
+        if CURRENT_KILLS > rand_kills:
+            self.nod_log.logOutput("Taking break for %ds" %rand_sleep)
+            Clock.sleep(rand_sleep)
+            TOTAL_KILLS += CURRENT_KILLS
+            CURRENT_KILLS = 0;
 
     """
+    " This function prints the count down timer when the script will start
     "
-    "
-    " Parent: Game Class
-    """
-    def getKillCount(self):
-        return TOTAL_KILLS + CURRENT_KILLS
-
-    """
-    "
-    "
-    " Parent: Game Class
+    " Parent: Game 
     """
     def startCountDown(self):
         lCount = COUNT_DOWN
         while(lCount > 0):
-            NodLog.logOutput("Starting in %d seconds" %lCount)
+            self.nod_log.logOutput("Starting in %d seconds" %lCount)
             Clock.sleep(1)
             lCount -= 1
 
     """
+    " This function toggles game loop status
     "
-    "
-    " Parent: Game Class
+    " Parent: Game 
     """
     def toggleGameStatus(self):
         global GAME_PAUSE
 
         if GAME_PAUSE:
-            NodLog.logOutput("Resuming game")
+            self.nod_log.logOutput("Resuming game")
             GAME_PAUSE = False
         else:
-            NodLog.logOutput("Pausing game")
+            self.nod_log.logOutput("Pausing game")
             GAME_PAUSE = True
+
+    """
+    " This function toggles which class ability is used in combat
+    "
+    " Parent: Game 
+    """
+    def toggleSpecialMoveButton(self, aVal):
+        self.CMB.special_move_button = aVal
+        self.nod_log.logOutput("Class Ability changed to (%s)" %aVal)
 
 
 

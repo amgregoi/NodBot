@@ -3,10 +3,9 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QUrl 
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAction, QPlainTextEdit, QDockWidget, QMenuBar, QMenu, QVBoxLayout, QGridLayout, QLabel
+from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton, QAction, QPlainTextEdit, QDockWidget, QMenuBar, QMenu, QVBoxLayout, QGridLayout, QLabel, QSpacerItem, QSizePolicy
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot, Qt
-import NodBot as Nodiatis
+from PyQt5.QtCore import Qt
 
 """
 " 
@@ -16,97 +15,128 @@ import NodBot as Nodiatis
 class Browser(QWebEngineView):
 
     """
-    " 
+    " This function initializes the browser class
     "
-    " Parent: Browser Class
+    " Parent: Browser 
     """
     def __init__(self):
         self.view = QWebEngineView.__init__(self)
         self.setWindowTitle('Loading...')
         self.titleChanged.connect(self.adjustTitle)
-
     
     """
-    " 
+    " This function loads the provided url
     "
-    " Parent: Browser Class
+    " Parent: Browser 
     """
-    def load(self,url):  
+    def load(self, url):  
         self.setUrl(QUrl(url)) 
  
     """
-    " 
+    " This function changes the title of the browser window
     "
-    " Parent: Browser Class
+    " Parent: Browser 
     """
     def adjustTitle(self):
         self.setWindowTitle(self.title())
  
     """
-    " 
+    " This function disables javascript in the browser
     "
-    " Parent: Browser Class
+    " Parent: Browser 
     """
     def disableJS(self):
         settings = QWebEngineSettings.globalSettings()
         settings.setAttribute(QWebEngineSettings.JavascriptEnabled, False)
 
 """
-" 
+" This class holds relevant buttons, and counters for the user to interact with
 "
 " Parent: None
 """ 
 class MenuPane(QWidget):
 
-    lKillCount = 0
+    kill_count = 0
+    chest_count = 0
     layout = QGridLayout()
 
-    mPlayStatus = "Play"
+    play_status = "Start"
+
+    special_button_text = "Special (F)"
+    special_move_button = True # True = 'f', False = 'd'
+
     
     """
-    " 
+    " This function intializes the MenuPane class
     "
-    " Parent: MenuPane Class
+    " Parent: MenuPane 
     """
-    def __init__(self):
+    def __init__(self, game):
         super(MenuPane, self).__init__()
+        self.game_comm = game
         self.initPane()
 
     """
     " 
     "
-    " Parent: MenuPane Class
+    " Parent: MenuPane 
     """
     def initPane(self):
 
-        button1 = QPushButton(self.mPlayStatus)
-        button1.clicked.connect(self.toggleStatus)
+        # init status button
+        status_button = QPushButton(self.play_status)
+        status_button.clicked.connect(self.toggleStatus)
 
-        button2 = QPushButton("Setup SS")
-        button2.clicked.connect(self.takeSetupScreenShot)
+        # init setup button
+        setup_button = QPushButton("Setup SS")
+        setup_button.clicked.connect(self.takeSetupScreenShot)
 
-        label1 = QLabel("Kill Count: %d" %self.lKillCount)
+        # init debug button
+        debug_button = QPushButton("DEBUG")
+        debug_button.clicked.connect(self.toggleDebug)
 
-        self.layout.addWidget(button1, 1, 0, Qt.AlignTop)
-        self.layout.addWidget(button2, 2, 0,Qt.AlignTop)
-        self.layout.addWidget(label1, 5, 0, Qt.AlignTop)
+        # init class ability button
+        special_button = QPushButton(self.special_button_text)
+        special_button.clicked.connect(self.toggleSpecialMoveButton)
+
+        # init kill count label
+        kill_count_label = QLabel("Kill Count: %d" %self.kill_count)
+        
+        # init chest count label
+        chest_count_label = QLabel("Chest Count: %d" %self.chest_count)
+
+        # Add all widgets to menu layout
+        self.layout.addWidget(status_button, 1, 0, Qt.AlignTop)
+        self.layout.addWidget(special_button, 2, 0, Qt.AlignTop)
+        self.layout.addWidget(debug_button, 3, 0, Qt.AlignTop)
+        self.layout.addWidget(setup_button, 4, 0, Qt.AlignTop)
+        self.layout.addWidget(kill_count_label, 6, 0, Qt.AlignBottom)
+        self.layout.addWidget(chest_count_label, 7, 0, Qt.AlignBottom)
         
         self.setLayout(self.layout)
 
     """
-    " 
+    " This function increments the kill counter
     "
-    " Parent: MenuPane Class
+    " Parent: MenuPane 
     """
     def incrementKillCount(self):
-        print("MADE IT HERE!!!!!!!!!!!!!!!!!")
-        self.lKillCount += 1
+        self.kill_count += 1
         self.updateLayout(self.layout)
 
     """
-    " 
+    " This function increments the chest counter
     "
-    " Parent: MenuPane Class
+    " Parent: MenuPane 
+    """
+    def incrementChestCount(self):
+        self.chest_count += 1
+        self.updateLayout(self.layout)
+
+    """
+    " This function refreshes the menu pane layout
+    "
+    " Parent: MenuPane 
     """
     def updateLayout(self, layout):
         for i in reversed(range(layout.count())):
@@ -121,25 +151,57 @@ class MenuPane(QWidget):
         self.initPane()
  
     """
-    " 
+    " This function toggles the run status of the bot
     "
-    " Parent: MenuPane Class
+    " Parent: MenuPane 
     """
     def toggleStatus(self, two):
-        if(self.mPlayStatus == "Play"): 
-            self.mPlayStatus = "Pause"
+        if(self.play_status == "Resume" or self.play_status == "Start"): 
+            self.play_status = "Pause"
         else: 
-            self.mPlayStatus = "Play"
+            self.play_status = "Resume"
+
         self.updateLayout(self.layout)
-        Nodiatis.toggleGameStatus()
+        self.game_comm.toggleGameStatus()
+
+ 
+    """
+    " This function toggles the debug status for output messages
+    "
+    " Parent: MenuPane 
+    """
+    def toggleDebug(self, two):
+        self.game_comm.toggleDebug()
+        
+
+    """
+    " This function toggles the class ability between "D" and "F"
+    "
+    " Parent: MenuPane 
+    """
+    def toggleSpecialMoveButton(self, two):
+        #Toggle the special flag
+        self.special_move_button = not self.special_move_button
+        #update the combat button
+        
+        if(self.special_move_button):
+            self.special_button_text = "Special (F)"
+            self.game_comm.toggleSpecialMoveButton('f')
+        else: 
+            self.special_button_text = "Special (D)"
+            self.game_comm.toggleSpecialMoveButton('d')
+
+        self.updateLayout(self.layout)
+
+
    
     """
-    " 
+    " This function takes the setup screenshot 
     "
-    " Parent: MenuPane Class
+    " Parent: MenuPane 
     """
-    def takeSetupScreenShot(one, two):
-        Nodiatis.takeSetupSS()
+    def takeSetupScreenShot(self, two):
+        self.game_comm.takeSetupSS()
 
 """
 " 
@@ -149,26 +211,18 @@ class MenuPane(QWidget):
 class OutputPane(QPlainTextEdit):
     
     """
-    " 
+    " This function intiailizes the OutputPanel widget
     "
-    " Parent: OutputPane Class
+    " Parent: OutputPane 
     """   
     def __init__(self):
         super(OutputPane, self).__init__()
-        self.initPane()
-
-    """
-    " 
-    "
-    " Parent: OutputPane Class
-    """
-    def initPane(self):
         self.setReadOnly(True)
 
     """
-    " 
+    " This function adds a message to the output panel 
     "
-    " Parent: OutputPane Class
+    " Parent: OutputPane 
     """
     def addMessage(self, aMessage):
         self.appendPlainText(aMessage)
@@ -184,26 +238,26 @@ class NodGUI(QMainWindow):
     mMenu = None
 
     """
-    " 
+    " This function initializes the NodGUI class
     "
-    " Parent: NodGUI Class
+    " Parent: NodGUI 
     """
-    def __init__(self):
+    def __init__(self, game):
         super(NodGUI, self).__init__()
         self.title = 'NodBot'
         self.left = 5
         self.top = 5
         self.width = 800
         self.height = 800
+        self.game_comm = game
         self.initUI()
  
     """
-    " 
+    " This function builds the relevant widgets for the nod gui
     "
-    " Parent: NodGUI Class
+    " Parent: NodGUI 
     """
     def initUI(self):
-        print("#################")
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height) 
 
@@ -211,7 +265,7 @@ class NodGUI(QMainWindow):
         lDock = self.createOutputPaneDock()
         
 
-        self.mMenu = MenuPane()
+        self.mMenu = MenuPane(self.game_comm)
         lDock2 = QDockWidget()
         lDock2.setFeatures(QDockWidget.NoDockWidgetFeatures)
         lDock2.setWidget(self.mMenu)
@@ -223,9 +277,9 @@ class NodGUI(QMainWindow):
         self.show()
 
     """
-    " 
+    " This function creates the browser widget
     "
-    " Parent: NodGUI Class
+    " Parent: NodGUI 
     """
     def createBrowserWidget(self):
         browser = Browser()
@@ -236,9 +290,9 @@ class NodGUI(QMainWindow):
         return browser
 
     """
-    " 
+    " This function creates the output panel widget
     "
-    " Parent: NodGUI Class
+    " Parent: NodGUI 
     """
     def createOutputPaneDock(self):
         self.mOutput = OutputPane()
@@ -249,20 +303,28 @@ class NodGUI(QMainWindow):
         return dock;
 
     """
-    " 
+    " This function adds a message to the output panel widget
     "
-    " Parent: NodGUI Class
+    " Parent: NodGUI 
     """
     def addOutputMessage(self, aMessage):
         self.mOutput.addMessage(aMessage)
 
     """
-    " 
+    " This function increments the kill counter in the menu pane widget
     "
-    " Parent: NodGUI Class
+    " Parent: NodGUI 
     """
     def incrementKillCount(self):
         self.mMenu.incrementKillCount()
+
+    """
+    " This function increments the chest counter in the menu pane widget
+    "
+    " Parent: NodGUI 
+    """
+    def incrementChestCount(self):
+        self.mMenu.incrementChestCount()
 
 
 
