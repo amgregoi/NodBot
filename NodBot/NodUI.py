@@ -110,8 +110,8 @@ class MenuPane(QWidget):
         self.layout.addWidget(special_button, 2, 0, Qt.AlignTop)
         self.layout.addWidget(debug_button, 3, 0, Qt.AlignTop)
         self.layout.addWidget(setup_button, 4, 0, Qt.AlignTop)
-        self.layout.addWidget(kill_count_label, 6, 0, Qt.AlignBottom)
-        self.layout.addWidget(chest_count_label, 7, 0, Qt.AlignBottom)
+        self.layout.addWidget(kill_count_label, 15, 0, Qt.AlignBottom)
+        self.layout.addWidget(chest_count_label, 16, 0, Qt.AlignBottom)
         
         self.setLayout(self.layout)
 

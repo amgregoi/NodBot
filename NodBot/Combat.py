@@ -48,7 +48,9 @@ class Combat():
         self.status = FightStatus.START
 
         #Start Combat
-        Input.doKeyPress('f')
+        while self.NodCV.doScreenMatch(self.NodCV.SSQueries.get("ooc")) is not None:
+            Input.doKeyPress('f')
+            Clock.sleep(1)
 
         #Start AutoAttack
         Input.doKeyPress('a')
@@ -59,27 +61,37 @@ class Combat():
 
         Input.moveTo(Rand.randint(20, 110), Rand.randint(100, 300))
 
+        Clock.sleep(45)
+
     """
     " This function will loot trophies, look for chests, and exit combat
     "
     " Parent: Combat 
     """
-    def end(self):
+    def end(self, coord):
         self.nod_log.logOutput("Finished Combat")
         self.status = FightStatus.END
 
-        #Click loot button
-        coord = self.NodCV.doScreenMatch(self.NodCV.SSQueries.get("exit"))
+        #update kill count after succesfully finshing combat
+        self.nod_log.logNewKill()
 
-        Input.doLeftClick(coord[0]-Rand.randint(190, 215), coord[1]-Rand.randint(60, 69))
-        Input.moveTo(Rand.randint(20, 110), Rand.randint(100, 300)) # Move off of loot location to get rid of tooltip
+
+        #Click loot button
+        # coord = self.NodCV.doScreenMatch(self.NodCV.SSQueries.get("exit"))
+
+        Input.doLeftClick(coord[0]-Rand.randint(190, 215), coord[1]-Rand.randint(63, 68))
+        # Input.moveTo(Rand.randint(20, 110), Rand.randint(100, 300)) # Move off of loot location to get rid of tooltip
         
         #Look for chests
         self.scanForChests()
 
         #Exit
-        Clock.sleep(2)
+        Clock.sleep(2) # global cooldown timer
         Input.doKeyPress('e')
+
+        while self.NodCV.doScreenMatch(self.NodCV.SSQueries.get("exit")) is not None:
+            Input.doKeyPress('e')
+            Clock.sleep(1)
 
         if SKIP_TROPHIES:
             location = self.NodCV.doScreenMatch(self.NodCV.SSQueries.get("confirm"))
@@ -90,6 +102,8 @@ class Combat():
                 self.nod_log.logDebug(e)
 
 
+
+
     """
     " This function scans the screen for the three types of chests
     "
@@ -97,7 +111,7 @@ class Combat():
     """
     def scanForChests(self):
         try:     
-            Clock.sleep(3)
+            Clock.sleep(4)
 
             xOffset = Rand.randint(-5, 5)
             yOffset = Rand.randint(0, 10)
@@ -137,7 +151,7 @@ class Combat():
             self.nod_log.logOutput("Combat in Progress")
             self.status = FightStatus.WAITING
 
-        Clock.sleep(3)
+        Clock.sleep(1)
 
 
 

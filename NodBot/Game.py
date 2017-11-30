@@ -44,6 +44,8 @@ class Game (QThread):
     " Parent: Game 
     """
     def GameLoop(self):
+        global CURRENT_KILLS
+
         self.startCountDown()
         
         while 1:
@@ -51,15 +53,14 @@ class Game (QThread):
                 try:
                     if self.nod_cv.doScreenMatch(self.nod_cv.SSQueries.get("ooc")) is not None: 
                         self.CMB.start()
-                        self.nod_log.logNewKill() # Log new kill in start of combat because we 
-                                                  # sometimes fail to exit on first attempt
-
-                    elif self.nod_cv.doScreenMatch(self.nod_cv.SSQueries.get("exit")) is not None:
-                        self.randomBreak()
-                        self.CMB.end()
-                        CURRENT_KILLS += 1
                     else:
-                        self.CMB.inProcess()
+                        exit = self.nod_cv.doScreenMatch(self.nod_cv.SSQueries.get("exit")) 
+                        if exit is not None:
+                            self.randomBreak()
+                            self.CMB.end(exit)
+                            CURRENT_KILLS += 1
+                        else:
+                            self.CMB.inProcess()
 
                 except Exception as e:
                     self.nod_log.logDebug("Exception occurred: ")
